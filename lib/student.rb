@@ -2,10 +2,10 @@ require_relative "../config/environment.rb"
 
 class Student
 
-  attr_accessor :name, :grade
-  attr_reader :id
+  attr_accessor :name, :grade, :id
 
-  def initialize(name, grade, id=nil)
+
+  def initialize(id=nil, name, grade)
     @id = id
     @name = name
     @grade = grade
@@ -45,20 +45,26 @@ class Student
   def self.create(name, grade)
    student = Student.new(name, grade)
    student.save
-   student
   end
 
   def self.new_from_db(row)
-    student.id = row[0]
-    student.name = row[1]
-    student.grade = row[2]
+    id = row[0]
+    name = row[1]
+    grade = row[2]
     self.new(id, name, grade)
   end
 
   def self.find_by_name(name)
-    sql = "SELECT * FROM students WHERE name = ?"
-    restult = DB[:conn].execute(sql, name)[0]
-    Student.new(restult[0], result[1], result[2])
+    sql = <<-SQL
+      SELECT *
+      FROM students
+      WHERE name = ?
+      LIMIT 1
+    SQL
+
+    DB[:conn].execute(sql, name).map do |row|
+      self.new_from_db(row)
+    end.first
   end
 
   def update
